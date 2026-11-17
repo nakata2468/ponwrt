@@ -32,7 +32,6 @@ jobs:
       matrix:
         target:
           - an7581
-          - an7583
 
     steps:
       - uses: actions/checkout@v6
@@ -62,7 +61,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: dl
-          key: ponwrt-dl-${{ matrix.target }}-${{ hashFiles('feeds.conf.default', 'configs/*.config') }}
+          key: ponwrt-dl-${{ matrix.target }}-${{ hashFiles('feeds.conf.default', 'configs/*.config', 'scripts/import-third-party-packages.sh') }}
           restore-keys: |
             ponwrt-dl-${{ matrix.target }}-
 
@@ -70,6 +69,9 @@ jobs:
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+
+      - name: Import third-party packages
+        run: bash scripts/import-third-party-packages.sh .
 
       - name: Load repository signing key
         env:
@@ -86,7 +88,12 @@ jobs:
           ./scripts/kconfig.pl + \
             "configs/${{ matrix.target }}.config" \
             configs/release.config > .config
-          make defconfig
+          make defconfig 2>&1 | tee defconfig.log
+          if grep -q 'recursive dependency detected!' defconfig.log; then
+            echo 'ERROR: recursive Kconfig dependency detected' >&2
+            exit 1
+          fi
+          python3 scripts/validate-packages.py .config configs/release.config
 
       - name: Download sources
         run: make download -j"$(nproc)"
