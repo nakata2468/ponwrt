@@ -37,9 +37,12 @@ def main() -> int:
         if wanted == "y":
             if got != "y":
                 errors.append(f"{symbol}: requested y, resolved {got or 'missing'}")
-        elif wanted in {"n", "m"}:
+        elif wanted == "m":
+            if got != "m":
+                errors.append(f"{symbol}: requested m, resolved {got or 'missing'}")
+        elif wanted == "n":
             if got in {"y", "m"}:
-                errors.append(f"{symbol}: requested {wanted}, resolved {got}")
+                errors.append(f"{symbol}: requested n, resolved {got}")
 
     if errors:
         print("Requested configuration was not fully resolved:", file=sys.stderr)
@@ -48,8 +51,9 @@ def main() -> int:
         return 1
 
     enabled = sum(value == "y" for value in requested.values())
-    disabled = len(requested) - enabled
-    print(f"Verified {enabled} enabled and {disabled} disabled requested symbols.")
+    modules = sum(value == "m" for value in requested.values())
+    disabled = sum(value == "n" for value in requested.values())
+    print(f"Verified {enabled} enabled, {modules} module, and {disabled} disabled requested symbols.")
     return 0
 
 
