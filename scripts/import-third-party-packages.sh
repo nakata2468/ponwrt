@@ -140,6 +140,9 @@ remove_feed_link() {
 
 remove_feed_link "packages/mpd"
 remove_feed_link "packages/squeezelite"
+remove_feed_link "packages/fwknop"
+remove_feed_link "video/qt5base"
+remove_feed_link "luci/luci-app-fwknopd"
 remove_feed_link "luci/luci-app-homeproxy"
 remove_feed_link "luci/luci-app-ipsec-vpnd"
 remove_feed_link "luci/luci-app-passwall"
