@@ -120,6 +120,9 @@ def main() -> int:
     if not index:
         raise SystemExit("No device images were packaged")
 
+    for metadata in shared_metadata:
+        shutil.copy2(metadata, output / metadata.name)
+
     index_path = output / "index.json"
     index_path.write_text(json.dumps({"target": target_name, "releases": index}, indent=2) + "\n", encoding="utf-8")
     print(f"Packaged {len(index)} device profiles; index: {index_path}")

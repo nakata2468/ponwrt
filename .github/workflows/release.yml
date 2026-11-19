@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag prefix, for example 2026-11-19
+        description: Release tag, for example 2026-11-19
         required: true
         type: string
       prerelease:
@@ -130,7 +130,7 @@ jobs:
           name: ponwrt-an7581
           path: release
 
-      - name: Publish one release per device
+      - name: Publish one release with per-device assets
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
@@ -138,11 +138,11 @@ jobs:
         run: |
           args=(
             --index release/index.json
-            --tag-base "$RELEASE_TAG"
+            --tag "$RELEASE_TAG"
             --repo "$GITHUB_REPOSITORY"
             --target "$GITHUB_SHA"
           )
           if [ "$PRERELEASE" = true ]; then
             args+=(--prerelease)
           fi
-          python3 scripts/publish-releases.py "${args[@]}"
+          python3 scripts/publish-release.py "${args[@]}"
