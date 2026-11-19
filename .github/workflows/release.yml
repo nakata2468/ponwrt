@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag
+        description: Release tag prefix, for example 2026-11-19
         required: true
         type: string
       prerelease:
@@ -101,17 +101,16 @@ jobs:
       - name: Build ${{ matrix.target }}
         run: make -j"$(nproc)"
 
-      - name: Pack ${{ matrix.target }}
+      - name: Split packages by device
         run: |
-          mkdir release
-          tar --zstd -cf "release/ponwrt-${{ matrix.target }}.tar.zst" \
-            -C bin/targets/airoha "${{ matrix.target }}"
+          python3 scripts/split-release.py \
+            "bin/targets/airoha/${{ matrix.target }}" release
 
       - name: Upload ${{ matrix.target }}
         uses: actions/upload-artifact@v4
         with:
           name: ponwrt-${{ matrix.target }}
-          path: release/*.tar.zst
+          path: release/**
           if-no-files-found: error
           retention-days: 7
 
@@ -123,33 +122,27 @@ jobs:
       contents: write
 
     steps:
+      - uses: actions/checkout@v6
+
       - name: Download firmware archives
         uses: actions/download-artifact@v4
         with:
-          pattern: ponwrt-*
+          name: ponwrt-an7581
           path: release
-          merge-multiple: true
 
-      - name: Create checksums
-        working-directory: release
-        run: sha256sum *.tar.zst > sha256sums
-
-      - name: Create GitHub release
+      - name: Publish one release per device
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
           PRERELEASE: ${{ inputs.prerelease }}
         run: |
           args=(
-            "$RELEASE_TAG"
-            release/*.tar.zst
-            release/sha256sums
+            --index release/index.json
+            --tag-base "$RELEASE_TAG"
             --repo "$GITHUB_REPOSITORY"
             --target "$GITHUB_SHA"
-            --title "PonWrt $RELEASE_TAG"
-            --generate-notes
           )
           if [ "$PRERELEASE" = true ]; then
             args+=(--prerelease)
           fi
-          gh release create "${args[@]}"
+          python3 scripts/publish-releases.py "${args[@]}"
