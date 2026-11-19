@@ -36,3 +36,5 @@ git-src
 .ccache
 .sccache
 .vscode*
+__pycache__/
+*.py[cod]
